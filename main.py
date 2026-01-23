@@ -9,8 +9,8 @@ async def main():
 
     #Initialisieren und starten eines Countdowns für den Api-Key. Dieser resetet sich alle 24 Stunden
 
-    Database = DatabaseInit(database_name="league", database_password="sohn2003", database_host="localhost", database_port="5432", database_user="postgres")
-    client = RiotAPIClient(riot_username="Eierkopf1234567", riot_password="Tast!34567",  ingame_name="MIKE OXMAUL", ingame_tag_without_hashtag="FEED") 
+    Database = DatabaseInit(database_name="league", database_password="", database_host="localhost", database_port="5432", database_user="postgres")
+    client = RiotAPIClient(riot_username="", riot_password="",  ingame_name="", ingame_tag_without_hashtag="") 
 
 
     # Api Key holen.Check if api key ist eine Helper Function.
