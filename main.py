@@ -17,7 +17,7 @@ async def main():
 
         # Initialize API-Key-Client and get api key to retrieve match data
 
-        API_KEY_Client = RiotAPI_KEYClient(riot_username="Eierkopf1234567", riot_password="Tast!34567")
+        API_KEY_Client = RiotAPI_KEYClient(riot_username="", riot_password="Tast!")
         if not API_KEY_Client.check:
             await API_KEY_Client.get_api_key()
 
