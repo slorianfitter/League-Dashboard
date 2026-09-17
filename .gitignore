@@ -1,1 +1,5 @@
-venv/ 
+venv/
+match_ids.csv
+__pycache__/
+*.pyc
+functions/api_key/key.csv
