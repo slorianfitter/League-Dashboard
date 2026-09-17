@@ -31,21 +31,19 @@ class Dashboard_Images:
         return champion_data
 
 
-    def Item(self)-> list:
+    def Item(self) -> list:
+        items = requests.get(self.item_link).json()["data"]
+
         item_data = []
-        res = requests.get(self.item_link).json()
-
-        items = res["data"]
-
-        for item in items.values():
+        for item_id, item_info in items.items():
             item_data.append({
-
-                "item_id":item,
-                "item_name": item["name"],
-                "item_cost": item["gold"]["base"],
-                "item_sell": item["gold"]["sell"],
-                "icon_link": self.download_link_item + item["image"]["full"]
+                "item_id": item_id,                          # "1001"
+                "item_name": item_info["name"],
+                "item_cost": item_info["gold"]["base"],
+                "item_sell": item_info["gold"]["sell"],
+                "icon_link": self.download_link_item + item_info["image"]["full"]
             })
+
         return item_data
 
     def Rune(self) -> list:
