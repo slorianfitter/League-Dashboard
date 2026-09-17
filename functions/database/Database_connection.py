@@ -73,5 +73,5 @@ class DatabaseInit():
         Uploads the data to the given table in the initzialized database. If the table does not exist, it will creat one
         '''
 
-        df.to_sql(table_name, self.engine, if_exists="replace", index=False)
+        df.to_sql(table_name, self.engine, if_exists="append", index=False)
         
