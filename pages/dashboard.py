@@ -23,6 +23,69 @@ items_image_map = dict(zip(items["item_id"].astype(int), items["icon_link"]))
 
 
 
+#### Styles ####
+column_style = {
+    "flex": 1, "minWidth": 0,
+    "display": "flex", "flexDirection": "column", "gap": "10px",
+}
+
+box_style = {                       
+    "border": "1px solid #ccc",
+    "padding": "10px",
+}
+
+player_row_style = {                
+    "display": "flex",
+    "flexDirection": "row",
+    "justifyContent": "space-between",
+    "alignItems": "center",
+    "gap": "10px",
+}
+
+item_grid_style = {"display": "flex", 
+                   "flexDirection": "row", 
+                   "gap": "0.5px", 
+                   "padding": "0.5px", 
+                   "alignItems": "center", 
+                   "justifyContent": "center"}
+
+text_style = { "fontSize": "14px", 
+              "lineHeight": "1.2"}
+
+#### helper functions to create the layout for each player ####
+
+def item_img(item_id):
+    return html.Img(src=items_image_map.get(item_id, ""),
+                    style={"width": "32px", "height": "32px"})
+
+
+def player_box(row, icon_left=True):
+    return html.Div([
+        html.H5(f"{row.riotId_name} #{row.riotId_tag}", style=text_style),
+        html.Div([
+            html.Img(src=champion_image_map.get(row.champ),
+                     style={"width": "64px", "height": "64px"}),
+
+            html.Div([
+                html.Div(f"K/D/A: {row.kills}/{row.deaths}/{row.assists}"),
+                html.Div(f"Gold: {row.gold}"),
+                html.Div(f"Cs: {row.total_cs + row.jgl_camps}"),
+            ], style=text_style),
+
+            html.Div([
+                html.Div([
+                    html.Div([item_img(getattr(row, f"item_{i}")) for i in range(0, 3)],
+                             style=item_grid_style),
+                    html.Div([item_img(getattr(row, f"item_{i}")) for i in range(3, 6)],
+                             style=item_grid_style),
+                ]),
+                item_img(row.vision_item),
+            ], style=item_grid_style),
+        ], style={**player_row_style,
+                  "flexDirection": "row" if icon_left else "row-reverse"}),
+    ], style=box_style)
+
+
 #### Layout ####
 ## 2 Columns - 1 for each Team, sorted by participantId 
 # -> 1 = Top, 2 = Jgl, 3 = Mid, 4 = Adc, 5 = Sup -> 6 = Top , ....
@@ -31,35 +94,31 @@ items_image_map = dict(zip(items["item_id"].astype(int), items["icon_link"]))
 ## It should only give an overview of what happened in the Game
 # Deeper analysis of the stat will appear in different pages
 
-layout = html.Div([
-    html.H1("League Match Dashboard", style={"textAlign": "center"}),
+header = html.Div([
+    html.Div("End of game result", style={"textAlign":"center"})
+    ])
+
+drop_down_bar = html.Div([
     dcc.Dropdown(
         options=[
             {"label": str(m), "value": m} for m in df.match_id.unique()
             ],
         id='demo-dropdown',
-        placeholder="Select a Match"),
-    html.Div([        
-        html.Div([
-            html.H2("Blue Side"),
-            html.Div(id="blue-side-boxes", 
-                    style={
-                    "display": "flex",
-                    "flexDirection": "column"})
-                ]),
-
-        html.Div([
-            html.H2("Red Side"),
-            html.Div(id="red-side-boxes", 
-                     style={
-                    "display": "flex",
-                    "flexDirection": "column"})
-                ]),
-
-            ], style={
-        "display": "flex",
-        "flexDirection": "row"})
+        placeholder="Select a Match")
     ])
+
+main_layout_style = {"width": "100%",
+                    "display": "flex"}
+main_layout = html.Div([
+    html.Div([
+        html.Div(id="blue-side-boxes", style=column_style),
+        html.Div(id="red-side-boxes", style=column_style)
+    ], style={"display": "flex", "flexDirection": "row", "width": "100%", "gap": "20px"})
+], style=main_layout_style)
+
+
+layout=html.Div([header, drop_down_bar, main_layout], style={"display": "flex", "flexDirection": "column", "gap": "20px", "width": "100%"})
+
 
 
 @callback(
@@ -67,182 +126,14 @@ layout = html.Div([
     Output('blue-side-boxes', 'children'),
     Input('demo-dropdown', 'value')
 )
-def update_sides(value):
-    if value is None:
-        empty = [html.Div("—") for _ in range(5)]
-        return empty, empty
 
+def update_sides(value):
     match_rows = df[df['match_id'] == value]
 
     red_rows = match_rows[match_rows['participantId'] > 5]
     blue_rows = match_rows[match_rows['participantId'] <= 5]
 
-    blue_boxes = [
-                html.Div([
-                    html.H5(f"{row.riotId_name} #{row.riotId_tag}"),
-                    html.Div([
-    
-                        html.Div([
-                            html.Img(
-                            src= champion_image_map.get(row.champ),
-                            style={
-                                            "width": "64px",
-                                            "height": "64px"
-                                        }
-                        ),
-                            html.Div([
-                                html.Div(
-                                    f"K/D/A: {row.kills}/{row.deaths}/{row.assists}"
-                            
-                                ),
-                                    html.Div(f"Gold: {row.gold}"),
-                                    html.Div(f"Cs: {row.total_cs + row.jgl_camps}")
-                                    ],
-                                        style={"display": "flex",
-                                                "flexDirection": "column",
-                                                "gap":"10px"}),
-    
-                        html.Div([
-                            html.Div([
-                                html.Div([
-                                html.Img(
-                                    src=items_image_map.get(getattr(row, f'item_{i}'),""),
-                                    style={
-                                        "width": "32px",
-                                        "height": "32px"
-                                    }
-                                )
-                                for i in range(0, 3)
-                                    ],
-                                    style={
-                                            "display": "flex",
-                                            "flexDirection": "row",
-                            }),
-                                html.Div([
-                                    html.Img(
-                                        src=items_image_map.get(getattr(row, f'item_{i}'),""),
-                                        style={
-                                            "width": "32px",
-                                            "height": "32px"
-                                        }
-                                    )
-                                    for i in range(3, 6)
-                                        ],
-                                        style={
-                                                "display": "flex",
-                                                "flexDirection": "row",
-                                })
-                            ]),
-                            html.Img(
-                                    src=items_image_map.get(row.vision_item),
-                                    style={
-                                        "width": "32px",
-                                        "height": "32px"
-                                    })
-                        ],
-                        style={
-                            "display": "flex",
-                            "flexDirection": "row",
-                        })
-    
-                            ],
-                        style={
-                            "display": "flex",
-                            "flexDirection": "row"
-                        }),                        
-    
-                    ], style={"flexDirection":"row"})            
-    
-                ], style={"flexDirection":"column"})                  
-    
-            for row in blue_rows.itertuples()
-    ]
-    red_boxes = [
-                    html.Div([
-                        html.H5(f"{row.riotId_name} #{row.riotId_tag}"),
-                        html.Div([
-        
-                            html.Div([
-                                html.Img(
-                                src= champion_image_map.get(row.champ),
-                                style={
-                                                "width": "64px",
-                                                "height": "64px"
-                                            }
-                            ),
-                                html.Div([
-                                    html.Div(
-                                        f"K/D/A: {row.kills}/{row.deaths}/{row.assists}"
-                                
-                                    ),
-                                        html.Div(f"Gold: {row.gold}"),
-                                        html.Div(f"Cs: {row.total_cs + row.jgl_camps}")
-                                        ],
-                                            style={"display": "flex",
-                                                    "flexDirection": "column",
-                                                    "gap":"10px"}),
-        
-                            html.Div([
-                                html.Div([
-                                    html.Div([
-                                    html.Img(
-                                        src=items_image_map.get(getattr(row, f'item_{i}'),""),
-                                        style={
-                                            "width": "32px",
-                                            "height": "32px"
-                                        }
-                                    )
-                                    for i in range(0, 3)
-                                        ],
-                                        style={
-                                                "display": "flex",
-                                                "flexDirection": "row",
-                                }),
-                                    html.Div([
-                                        html.Img(
-                                            src=items_image_map.get(getattr(row, f'item_{i}'),""),
-                                            style={
-                                                "width": "32px",
-                                                "height": "32px"
-                                            }
-                                        )
-                                        for i in range(3, 6)
-                                            ],
-                                            style={
-                                                    "display": "flex",
-                                                    "flexDirection": "row",
-                                    })
-                                ]),
-                                html.Img(
-                                        src=items_image_map.get(row.vision_item),
-                                        style={
-                                            "width": "32px",
-                                            "height": "32px"
-                                        })
-                            ],
-                            style={
-                                "display": "flex",
-                                "flexDirection": "row",
-                            })
-        
-                                ],
-                            style={
-                                "display": "flex",
-                                "flexDirection": "row"
-                            }),                        
-        
-                        ], style={"flexDirection":"row"})            
-        
-                    ], style={"flexDirection":"column"})                  
-        
-                for row in red_rows.itertuples()
-        ]
-    
+    blue_boxes = [player_box(row, icon_left=True) for row in blue_rows.itertuples()]
+    red_boxes = [player_box(row, icon_left=False) for row in red_rows.itertuples()]
 
-    # blue boxes are straight copy paste from red boxes, just with an adaption that the champ icon will be listed left not right
-    
-    
     return red_boxes, blue_boxes
-
-
-
