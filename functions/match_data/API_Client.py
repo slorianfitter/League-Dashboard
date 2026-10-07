@@ -127,6 +127,8 @@ class RiotAPIClient:
                             "total_cs": player_info["totalMinionsKilled"],
                             "jgl_camps": (int(player_info["totalAllyJungleMinionsKilled"]) + int(player_info["totalEnemyJungleMinionsKilled"])),
 
+                #Experience
+                            "level": player_info["champLevel"],
 
                 # Objectives
 
