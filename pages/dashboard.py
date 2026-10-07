@@ -1,5 +1,6 @@
+from click import style
 import dash
-from dash import Dash, html, dcc, callback, Output, Input
+from dash import  html, callback, Output, Input
 import pandas as pd
 import sqlalchemy
 
@@ -11,7 +12,7 @@ dash.register_page(__name__)
 
 engine = sqlalchemy.create_engine("postgresql+psycopg2://postgres:sohn2003@localhost:5432/league")
 
-df = pd.read_sql_table("match_data_end", engine)
+
 items = pd.read_sql_table("Items", engine)
 champion = pd.read_sql_table("Champions", engine)
 
@@ -26,12 +27,14 @@ items_image_map = dict(zip(items["item_id"].astype(int), items["icon_link"]))
 #### Styles ####
 column_style = {
     "flex": 1, "minWidth": 0,
-    "display": "flex", "flexDirection": "column", "gap": "10px",
+    "display": "flex", "flexDirection": "column", 
 }
 
 box_style = {                       
     "border": "1px solid #ccc",
-    "padding": "10px",
+    "boxSizing": "border-box",
+    "padding": "2px",
+    "margin": "1px",
 }
 
 player_row_style = {                
@@ -39,7 +42,7 @@ player_row_style = {
     "flexDirection": "row",
     "justifyContent": "space-between",
     "alignItems": "center",
-    "gap": "10px",
+    "gap": "10px"
 }
 
 item_grid_style = {"display": "flex", 
@@ -49,8 +52,9 @@ item_grid_style = {"display": "flex",
                    "alignItems": "center", 
                    "justifyContent": "center"}
 
-text_style = { "fontSize": "14px", 
-              "lineHeight": "1.2"}
+text_style = { "fontSize": "12px", 
+              "lineHeight": "1.2",
+              "textAlign": "center",}
 
 #### helper functions to create the layout for each player ####
 
@@ -63,8 +67,30 @@ def player_box(row, icon_left=True):
     return html.Div([
         html.H5(f"{row.riotId_name} #{row.riotId_tag}", style=text_style),
         html.Div([
-            html.Img(src=champion_image_map.get(row.champ),
-                     style={"width": "64px", "height": "64px"}),
+            html.Div(
+                html.Div(row.level, style={
+                                            "color": "white",
+                                            "fontSize": "8px",
+                                            "fontWeight": "bold",
+                                            "backgroundColor": "rgba(0,0,0,1)",
+                                            "width": "16px",
+                                            "height": "16px",
+                                            "borderRadius": "50%",
+                                            "display": "flex",
+                                            "alignItems": "center",
+                                            "justifyContent": "center",
+                                            "position": "absolute"
+                                            }), 
+                style={
+
+                    # Image as background of the div
+                    "backgroundImage": f"url('{champion_image_map.get(row.champ)}')",
+                    "width": "64px",
+                    "height": "64px",
+                    "backgroundSize": "cover",
+                    "backgroundPosition": "center"
+                },
+            ),
 
             html.Div([
                 html.Div(f"K/D/A: {row.kills}/{row.deaths}/{row.assists}"),
@@ -83,7 +109,9 @@ def player_box(row, icon_left=True):
             ], style=item_grid_style),
         ], style={**player_row_style,
                   "flexDirection": "row" if icon_left else "row-reverse"}),
-    ], style=box_style)
+    ], style={**box_style, "background-color": "rgba(36, 151, 232, 0.5)" if icon_left else "rgba(232, 36, 36, 0.5)",
+                              "marginTop": "0.2vw",
+                "marginBottom": "0.2vw",})
 
 
 #### Layout ####
@@ -98,15 +126,6 @@ header = html.Div([
     html.Div("End of game result", style={"textAlign":"center"})
     ])
 
-drop_down_bar = html.Div([
-    dcc.Dropdown(
-        options=[
-            {"label": str(m), "value": m} for m in df.match_id.unique()
-            ],
-        id='demo-dropdown',
-        placeholder="Select a Match")
-    ])
-
 main_layout_style = {"width": "100%",
                     "display": "flex"}
 main_layout = html.Div([
@@ -116,19 +135,20 @@ main_layout = html.Div([
     ], style={"display": "flex", "flexDirection": "row", "width": "100%", "gap": "20px"})
 ], style=main_layout_style)
 
-
-layout=html.Div([header, drop_down_bar, main_layout], style={"display": "flex", "flexDirection": "column", "gap": "20px", "width": "100%"})
+layout=html.Div([header, main_layout], style={"display": "flex", "flexDirection": "column", "gap": "20px", "width": "100%"})
 
 
 
 @callback(
     Output('red-side-boxes', 'children'),
     Output('blue-side-boxes', 'children'),
-    Input('demo-dropdown', 'value')
+    Input('stored-df', 'data')
 )
+def update_sides(data):
+    if not data:
+        return [], []
 
-def update_sides(value):
-    match_rows = df[df['match_id'] == value]
+    match_rows = pd.DataFrame(data)
 
     red_rows = match_rows[match_rows['participantId'] > 5]
     blue_rows = match_rows[match_rows['participantId'] <= 5]
